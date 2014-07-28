@@ -10,9 +10,51 @@
 
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>  <!--  Mobile viewport optimized: j.mp/bplateviewport -->
 
-    <link rel="stylesheet" href="includes/style.css"/>
+    <link rel="stylesheet" href="includes/style.css" />
+        <link rel="stylesheet" href="rightstyle.css" />
+
+    <script src="data.js" type="text/javascript"></script>
+    <script src="mustache.js" type="text/javascript"></script>
     <script src="http://code.jquery.com/jquery-1.6.1.min.js" type="text/javascript"></script>
 <script type="application/javascript">
+
+var votes = {
+    i: 0,
+    user_votes: [],
+    votes_data: [],
+
+    init: function () {
+        votes.data = data.v;
+        for ( var i = 0 ; i < votes.data.length ; i++ ) {
+            vote_id = data.v[i];
+            votes.get_vote(vote_id);
+        }
+    },
+
+    get_vote: function (id) {
+        function callback(data) {
+            data.id = id;
+            votes.votes_data.push(data);
+            if (votes.votes_data.length == votes.data.length)
+                votes.render_qs();
+        }
+        $.get("http://oknesset.org/api/vote/"+vote_id+"/", callback, "jsonp");  
+    },
+    render_qs: function() {
+        var t = $('#questions_template').html();
+        $('#questions').html(Mustache.to_html(t, {questions:votes.votes_data}));
+        $('.button').click(function() {
+            votes.user_votes[votes.i]=$(this).children().attr("class");
+            $('#question-'+votes.votes_data[votes.i].id).hide();
+            votes.i++;
+            $('#question-'+votes.votes_data[votes.i].id).show();
+
+        });
+    },
+}
+
+$(votes.init);
+
 
 var rdr = {
         scale: 20//going all the way from 1 to 100!
@@ -145,20 +187,24 @@ $(rdr.init);
 
 <div id="radar">
 </div>
-<div id="question">
-<section id="title">הגנת השכר</section>
-
-<p>הצעת החוק המתפרסמת בזה נועדה להוסיף לרשימת הניכויים המותרים. ניכויים מקובלים במשק בעד פעילויות רווחה ותרבות או לרכישת שירותים ומוצרים שמוצעים לעובדים במקום העבודה, במקרים שבהם כוח הקנייה של העובדים כקבוצה או התועלת שבגבייה מרוכזת של התשלומים באמצעות תלושי השכר מאפשרים את רכישת הפעילויות, המוצרים והשירותים בתנאים נוחים.</p>
-
-
-<nav id="answers">
-<ul>
-<il><a id="button1" href="#" alt="בעד" title="בעד">בעד</a></il>
-<il><a id="button2" href="#" alt="נגד" title="נגד">נגד</a></il>
-<il><a id="button3" href="#" alt="נמנע" title="נמנע">נמנע</a></il>
-</ul>
-</nav>
+<div id="questions">
 </div>
+
+<script type="text/mustache" id="questions_template">
+    <ol>
+    {{#questions}}
+        <li class="question" id="question-{{id}}">
+            <h2>{{title}}</h2>
+            <p>{{summary}}</p>
+            <ul id="answers">
+                <li class="button"><a class="for" vote="{{id}}">בעד</a></li>
+                <li class="button"><a class="abstain" vote="{{id}}">נגד</a></li>
+                <li class="button"><a class="against" vote="{{id}}">נמנע</a></li>
+            </ul>
+        </li>
+    {{/questions}}
+    </ol>
+</script>
 
 
 </body>
